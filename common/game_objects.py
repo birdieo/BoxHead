@@ -37,19 +37,12 @@ class Player:
         self.y = y
         self.player_id = player_id
         self.angle = 0
-<<<<<<< HEAD
         self.health = 500
         self.armor = 0  # New armor attribute
         self.max_armor = 400  # Maximum armor (4 * 100)
         self.speed = 5
         self.size = 30
         self.color = (0, 255, 0)
-=======
-        self.health = 500  # 500% życia
-        self.speed = 5
-        self.size = 30
-        self.color = (0, 255, 0)  # Green for players
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
         self.bullets = []
         self.last_shot = 0
         basic_weapon = get_weapon_by_name("Pistol")
@@ -86,15 +79,10 @@ class Player:
         if current_time - self.last_shot > weapon.fire_rate and self.ammo.get(weapon.name, 0) > 0:
             self.last_shot = current_time
             
-<<<<<<< HEAD
             # Consume ammo for all weapon types
             self.ammo[weapon.name] -= 1
             
             if weapon.special_type is None:
-=======
-            if weapon.special_type is None:
-                self.ammo[weapon.name] -= 1
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
                 return Bullet(self.x, self.y, self.angle, self.player_id, weapon)
             elif weapon.special_type == 'wall' or weapon.special_type == 'mine':
                 return None
@@ -106,23 +94,15 @@ class Player:
 
     def respawn(self):
         self.dead = False
-<<<<<<< HEAD
         self.health = 500
         self.armor = 0  # Reset armor on respawn
         self.x, self.y = 400, 300
         self.respawn_timer = 0
-=======
-        self.health = 500  # 500% życia
-        self.x, self.y = 400, 300
-        self.respawn_timer = 0
-        # Reset weapon inventory to basic weapon
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
         basic_weapon = get_weapon_by_name("Pistol")
         self.weapons = [basic_weapon]
         self.selected_weapon_index = 0
         self.ammo = {basic_weapon.name: basic_weapon.max_ammo}
 
-<<<<<<< HEAD
     def add_armor(self, value):
         self.armor = min(self.max_armor, self.armor + value)
 
@@ -142,8 +122,6 @@ class Player:
             if self.health <= 0 and not self.dead:
                 self.kill()
 
-=======
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
         # Draw player body
@@ -246,128 +224,117 @@ class Enemy:
 
     def move_towards(self, target_x, target_y):
         angle = math.atan2(target_y - self.y, target_x - self.x)
-        dx = math.cos(angle) * self.speed
-        dy = math.sin(angle) * self.speed
-        return dx, dy, math.degrees(angle) # Zwróć wektor ruchu i kąt w stopniach
+        dx = math.cos(angle)
+        dy = math.sin(angle)
+        return dx, dy
 
     def get_patrol_vector(self, dt):
-        if self._patrol_timer <= 0:
-            # Wylosuj nowy cel patrolowania w pobliżu
-            target_angle_rad = random.uniform(0, 2 * math.pi)
-            distance = random.uniform(50, 150)
-            self._patrol_target = (self.x + math.cos(target_angle_rad) * distance, self.y + math.sin(target_angle_rad) * distance)
-            self._patrol_timer = self._patrol_duration
+        self._patrol_timer += dt
+        if self._patrol_timer >= self._patrol_duration:
+            self._patrol_timer = 0
+            self._patrol_target = (
+                self.x + random.randint(-200, 200),
+                self.y + random.randint(-200, 200)
+            )
         
-        # Sprawdź czy dotarto do celu, jeśli tak, wylosuj nowy cel
-        dist_to_target = ((self._patrol_target[0] - self.x)**2 + (self._patrol_target[1] - self.y)**2)**0.5
-        if dist_to_target < self.speed * dt * 2: # Jeśli blisko celu (uwzględnij prędkość)
-             self._patrol_timer = 0 # Wymuś wylosowanie nowego celu
-             return self.get_patrol_vector(dt) # Wylosuj nowy cel i zwróc nowy wektor/kąt
-
-        self._patrol_timer -= dt
-        return self.move_towards(self._patrol_target[0], self._patrol_target[1]) # move_towards teraz zwraca kąt
+        angle = math.atan2(self._patrol_target[1] - self.y, self._patrol_target[0] - self.x)
+        return math.cos(angle), math.sin(angle)
 
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
         # Draw enemy body
         pygame.draw.circle(screen, self.color, (int(self.x-cx), int(self.y-cy)), self.size)
         
-        # Draw HP bar above the enemy
-        bar_width = self.size * 2
-        bar_height = 5
-        hp_bar_x = int(self.x - cx - bar_width / 2)
-        hp_bar_y = int(self.y - cy - self.size - 15)
-        current_hp_width = (self.health / self._initial_health) * bar_width # Użyj _initial_health do obliczeń
+        # Draw health bar
+        health_width = 40
+        health_height = 5
+        health_x = int(self.x - health_width/2 - cx)
+        health_y = int(self.y - self.size - 10 - cy)
         
-        # Rysuj tło paska zdrowia
-        pygame.draw.rect(screen, (255, 0, 0), (hp_bar_x, hp_bar_y, bar_width, bar_height)) # Czerwone tło
-        # Rysuj aktualne zdrowie
-        pygame.draw.rect(screen, (0, 255, 0), (hp_bar_x, hp_bar_y, current_hp_width, bar_height)) # Zielony pasek
-
-        # Draw eyes (simple dots based on look_angle)
-        angle_rad = math.radians(self.look_angle) # Użyj look_angle z obiektu
-        eye_distance = self.size // 3
-        eye_offset_angle_rad = math.radians(30) # Rozstawienie oczu w radianach
-
-        # Lewe oko
-        eye1_angle = angle_rad - eye_offset_angle_rad
-        eye1_x = self.x + math.cos(eye1_angle) * eye_distance
-        eye1_y = self.y + math.sin(eye1_angle) * eye_distance
-        pygame.draw.circle(screen, (0, 0, 0), (int(eye1_x - cx), int(eye1_y - cy)), max(1, self.size // 6)) # Czarne oko
-
-        # Prawe oko
-        eye2_angle = angle_rad + eye_offset_angle_rad
-        eye2_x = self.x + math.cos(eye2_angle) * eye_distance
-        eye2_y = self.y + math.sin(eye2_angle) * eye_distance
-        pygame.draw.circle(screen, (0, 0, 0), (int(eye2_x - cx), int(eye2_y - cy)), max(1, self.size // 6)) # Czarne oko
+        # Background (red)
+        pygame.draw.rect(screen, (255,0,0), (health_x, health_y, health_width, health_height))
+        # Foreground (green)
+        current_health_width = (self.health / self._initial_health) * health_width
+        pygame.draw.rect(screen, (0,255,0), (health_x, health_y, current_health_width, health_height))
+        
+        # Draw direction indicator
+        end_x = self.x + math.cos(math.radians(self.look_angle)) * self.size
+        end_y = self.y + math.sin(math.radians(self.look_angle)) * self.size
+        pygame.draw.line(screen, (255, 255, 255), (self.x-cx, self.y-cy), (end_x-cx, end_y-cy), 2)
 
 class Wall:
     def __init__(self, x, y, width, height, is_player_wall=False, health=100):
         self.rect = pygame.Rect(x, y, width, height)
-        self.color = (255, 255, 0) if not is_player_wall else (0, 200, 255)  # Jasnożółty dla zwykłych, Cyan dla stawianych
         self.is_player_wall = is_player_wall
         self.health = health
+        self.max_health = health
 
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
-        r = self.rect.move(-cx, -cy)
-        pygame.draw.rect(screen, self.color, r)
+        rect = pygame.Rect(self.rect.x - cx, self.rect.y - cy, self.rect.width, self.rect.height)
+        color = (150,75,0) if self.is_player_wall else (128,128,128)
+        pygame.draw.rect(screen, color, rect)
         if self.is_player_wall:
-            pygame.draw.rect(screen, (255,255,255), r, 2)  # White border for player walls
+            health_percent = self.health / self.max_health
+            health_height = self.rect.height * health_percent
+            health_rect = pygame.Rect(rect.x, rect.bottom - health_height, rect.width, health_height)
+            pygame.draw.rect(screen, (0,255,0), health_rect)
 
 class LootBox:
     def __init__(self, x, y, weapon=None):
         self.x = x
         self.y = y
         self.size = 15
-        self.color = (255, 215, 0)  # Gold
         self.weapon = weapon if weapon else get_random_weapon()
+        self.color = self.weapon.icon_color
 
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
-        pygame.draw.rect(screen, self.color, (int(self.x - self.size/2 - cx), int(self.y - self.size/2 - cy), self.size, self.size))
-        pygame.draw.rect(screen, self.weapon.icon_color, (int(self.x - self.size/2 - cx), int(self.y - self.size/2 - cy), self.size, 5))
-        font = pygame.font.SysFont(None, 16)
-        text = font.render(self.weapon.name, True, (0,0,0))
-        screen.blit(text, (self.x - self.size/2 - cx, self.y - self.size/2 - 10 - cy))
+        rect = pygame.Rect(int(self.x-self.size-cx), int(self.y-self.size-cy), self.size*2, self.size*2)
+        pygame.draw.rect(screen, self.color, rect)
+        # Draw border
+        pygame.draw.rect(screen, (255,255,255), rect, 2)
 
 class Mine:
     def __init__(self, x, y, owner_id, damage=50):
         self.x = x
         self.y = y
-        self.size = 12
+        self.size = 10
         self.owner_id = owner_id
         self.damage = damage
-        self.color = (255, 0, 0)
-        self.active = True
+        self.active = False
+        self.activation_delay = 1.0  # seconds
+        self.activation_timer = 0.0
 
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
-        pygame.draw.circle(screen, self.color, (int(self.x-cx), int(self.y-cy)), self.size)
-<<<<<<< HEAD
-        pygame.draw.circle(screen, (0,0,0), (int(self.x-cx), int(self.y-cy)), self.size-4)
+        color = (255,0,0) if self.active else (128,128,128)
+        pygame.draw.circle(screen, color, (int(self.x-cx), int(self.y-cy)), self.size)
+        # Draw border
+        pygame.draw.circle(screen, (0,0,0), (int(self.x-cx), int(self.y-cy)), self.size, 2)
 
 class Pickup:
     def __init__(self, x, y, pickup_type='health', value=50):
         self.x = x
         self.y = y
-        self.size = 15
-        self.pickup_type = pickup_type  # 'health' or 'armor'
+        self.pickup_type = pickup_type
         self.value = value
+        self.size = 10
         if pickup_type == 'health':
             self.color = (0, 255, 0)  # Green for health
-            self.symbol = '+'
-        else:  # armor
-            self.color = (0, 128, 255)  # Light blue for armor
-            self.symbol = 'A'
+        elif pickup_type == 'armor':
+            self.color = (0, 128, 255)  # Blue for armor
+        else:
+            self.color = (255, 255, 255)  # White for unknown
 
     def draw(self, screen, camera_offset=(0,0)):
         cx, cy = camera_offset
-        pygame.draw.rect(screen, self.color, (int(self.x - self.size/2 - cx), int(self.y - self.size/2 - cy), self.size, self.size))
-        font = pygame.font.SysFont(None, 20)
-        text = font.render(self.symbol, True, (255,255,255))
-        text_rect = text.get_rect(center=(int(self.x - cx), int(self.y - cy)))
-        screen.blit(text, text_rect) 
-=======
-        pygame.draw.circle(screen, (0,0,0), (int(self.x-cx), int(self.y-cy)), self.size-4) 
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
+        pygame.draw.circle(screen, self.color, (int(self.x-cx), int(self.y-cy)), self.size)
+        # Draw cross inside
+        line_size = self.size - 2
+        pygame.draw.line(screen, (255,255,255), 
+                        (int(self.x-cx-line_size), int(self.y-cy)), 
+                        (int(self.x-cx+line_size), int(self.y-cy)), 2)
+        pygame.draw.line(screen, (255,255,255), 
+                        (int(self.x-cx), int(self.y-cy-line_size)), 
+                        (int(self.x-cx), int(self.y-cy+line_size)), 2)

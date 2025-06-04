@@ -4,11 +4,7 @@ import time
 import random
 import math
 import pygame
-<<<<<<< HEAD
 from common.game_objects import Player, Enemy, Bullet, Wall, LootBox, get_random_weapon, Mine, Pickup
-=======
-from common.game_objects import Player, Enemy, Bullet, Wall, LootBox, get_random_weapon, Mine
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
 from common.network import NetworkProtocol, GameState
 
 class GameServer:
@@ -273,7 +269,6 @@ class GameServer:
                             # Add points to player's score
                             self.game_state.scores[bullet.player_id] += points
                             
-<<<<<<< HEAD
                             # Chance to drop health or armor (30% total: 20% health, 10% armor)
                             drop_roll = random.random()
                             if drop_roll < 0.2:  # 20% chance for health
@@ -283,18 +278,11 @@ class GameServer:
                             else:  # 70% chance for weapon
                                 self.game_state.lootboxes.append(LootBox(enemy.x, enemy.y))
                             
-=======
-                            self.game_state.lootboxes.append(LootBox(enemy.x, enemy.y))
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
                             self.game_state.enemies.remove(enemy)
                         # Remove the bullet
                         if bullet in self.game_state.bullets:
                             self.game_state.bullets.remove(bullet)
-<<<<<<< HEAD
-                        break
-=======
-                        break # Pocisk gracza trafił we wroga, usuń pocisk
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
+                            break
 
                 # Check bullet collisions with players
                 for player in self.game_state.players.values():
@@ -311,7 +299,6 @@ class GameServer:
                                     self.game_state.bullets.remove(bullet)
                                 break # Pocisk trafił w gracza, usuń pocisk
 
-<<<<<<< HEAD
             # Player picks up items
             for player in self.game_state.players.values():
                 if player.dead:
@@ -330,16 +317,6 @@ class GameServer:
                 for lootbox in self.game_state.lootboxes[:]:
                     if ((player.x - lootbox.x) ** 2 + (player.y - lootbox.y) ** 2) ** 0.5 < player.size + lootbox.size:
                         player.add_weapon(lootbox.weapon)
-=======
-            # Player picks up lootboxes
-            for player in self.game_state.players.values():
-                if player.dead:
-                    continue
-                for lootbox in self.game_state.lootboxes[:]:
-                    if ((player.x - lootbox.x) ** 2 + (player.y - lootbox.y) ** 2) ** 0.5 < player.size + lootbox.size:
-                        player.add_weapon(lootbox.weapon)
-                        # Remove the automatic weapon switching
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
                         self.game_state.lootboxes.remove(lootbox)
 
             # Update mines and check for explosions
@@ -387,10 +364,11 @@ class GameServer:
             now = time.time() * 1000 # Aktualny czas w milisekundach
             for enemy in self.game_state.enemies[:]: # Iterate over a copy in case enemies are removed
                 alive_players = [p for p in self.game_state.players.values() if not p.dead]
+                target_player = None
                 
                 # Docelowy wektor ruchu i kąt (w stopniach)
-                target_dx, target_dy, target_angle_deg = (0, 0, enemy.look_angle)
-                target_player = None
+                target_dx = target_dy = 0
+                target_angle_deg = enemy.look_angle
 
                 if alive_players:
                     # Szukaj najbliższego żywego gracza
@@ -410,11 +388,16 @@ class GameServer:
                               self.game_state.bullets.append(enemy_bullet)
                     else:
                          # Jeśli nie strzelający wróg, lub poza zasięgiem, biegnij do gracza
-                         target_dx, target_dy, target_angle_deg = enemy.move_towards(target_player.x, target_player.y)
-                    enemy._patrol_timer = 0 # Zresetuj timer patrolowania
+                         angle = math.atan2(target_player.y - enemy.y, target_player.x - enemy.x)
+                         target_dx = math.cos(angle) * enemy.speed
+                         target_dy = math.sin(angle) * enemy.speed
+                         target_angle_deg = math.degrees(angle)
                 else:
                     # Jeśli nie ma żywych graczy, patroluj
-                    target_dx, target_dy, target_angle_deg = enemy.get_patrol_vector(dt)
+                    dx, dy = enemy.get_patrol_vector(dt)
+                    target_dx = dx * enemy.speed
+                    target_dy = dy * enemy.speed
+                    target_angle_deg = math.degrees(math.atan2(dy, dx))
 
                 enemy.look_angle = target_angle_deg # Ustaw kąt patrzenia dla synchronizacji
 
@@ -444,7 +427,7 @@ class GameServer:
                     if hit_wall_x and hasattr(enemy, 'damage') and enemy.damage > 0:
                          hit_wall_x.health -= enemy.damage # Zadaj obrażenia ścianie
 
-                    if alive_players: # Tylko jeśli ścigamy gracza
+                    if target_player: # Tylko jeśli ścigamy gracza
                          # Określ kierunek ruchu wzdłuż ściany (prostopadle do target_angle)
                          wall_follow_angle_rad = math.radians(target_angle_deg) + math.pi / 2 * (1 if random.random() > 0.5 else -1) # Losowo w lewo lub w prawo
                          # Sprawdź, który kierunek (wall_follow_angle_rad lub wall_follow_angle_rad + pi) jest bliżej celu Y
@@ -492,7 +475,7 @@ class GameServer:
                          if hit_wall_y and hasattr(enemy, 'damage') and enemy.damage > 0:
                               hit_wall_y.health -= enemy.damage # Zadaj obrażenia ścianie
 
-                         if alive_players: # Tylko jeśli ścigamy gracza
+                         if target_player: # Tylko jeśli ścigamy gracza
                               # Określ kierunek ruchu wzdłuż ściany (prostopadle do target_angle)
                               wall_follow_angle_rad = math.radians(target_angle_deg) + math.pi / 2 * (1 if random.random() > 0.5 else -1) # Losowo w lewo lub w prawo
                               # Sprawdź, który kierunek (wall_follow_angle_rad lub wall_follow_angle_rad + pi) jest bliżej celu X
@@ -518,15 +501,18 @@ class GameServer:
                                    enemy.x = attempt_x_wall_follow
                                    moved_x = True # Mark as moved in X due to wall following
                                    break
-
-                # Usuń zniszczone ściany po przetworzeniu wszystkich wrogów
-                self.game_state.walls = [wall for wall in self.game_state.walls if wall.health > 0]
+                    else:
+                         enemy.y = attempt_y # Zastosuj ruch w Y jeśli nie było kolizji
+                         moved_y = True
 
                 # Kolizja zombie z graczem (zadawanie obrażeń)
                 if target_player and ((enemy.x - target_player.x) ** 2 + (enemy.y - target_player.y) ** 2) ** 0.5 < enemy.size + target_player.size:
                     target_player.health -= enemy.damage
                     if target_player.health <= 0 and not target_player.dead:
                         target_player.kill()
+
+            # Usuń zniszczone ściany po przetworzeniu wszystkich wrogów
+            self.game_state.walls = [wall for wall in self.game_state.walls if wall.health > 0]
 
             time.sleep(1/60)  # 60 FPS
 

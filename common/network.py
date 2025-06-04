@@ -2,11 +2,7 @@ import json
 import socket
 import pickle
 import struct
-<<<<<<< HEAD
 from common.game_objects import Player, Enemy, Bullet, Wall, LootBox, Mine, get_weapon_by_name, Pickup
-=======
-from common.game_objects import Player, Enemy, Bullet, Wall, LootBox, Mine, get_weapon_by_name
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
 
 class NetworkProtocol:
     @staticmethod
@@ -50,17 +46,11 @@ class GameState:
         self.bullets = []
         self.lootboxes = []
         self.mines = []
-<<<<<<< HEAD
         self.pickups = []
         self.game_over = False
         self.wave = 1
         self.wave_cooldown = 0
         self.scores = {}
-=======
-        self.game_over = False
-        self.wave = 1
-        self.wave_cooldown = 0
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
 
     def to_dict(self):
         return {
@@ -69,10 +59,7 @@ class GameState:
                 'y': p.y,
                 'angle': p.angle,
                 'health': p.health,
-<<<<<<< HEAD
                 'armor': p.armor,
-=======
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
                 'weapons': [w.name for w in p.weapons],
                 'selected_weapon_index': p.selected_weapon_index,
                 'dead': getattr(p, 'dead', False),
@@ -83,39 +70,23 @@ class GameState:
             'bullets': [{'x': b.x, 'y': b.y, 'angle': b.angle, 'player_id': b.player_id, 'color': getattr(b, 'color', (255,255,0))} for b in self.bullets],
             'lootboxes': [{'x': l.x, 'y': l.y, 'weapon': l.weapon.name} for l in self.lootboxes],
             'mines': [{'x': m.x, 'y': m.y, 'owner_id': m.owner_id, 'damage': m.damage, 'active': m.active} for m in self.mines],
-<<<<<<< HEAD
             'pickups': [{'x': p.x, 'y': p.y, 'pickup_type': p.pickup_type, 'value': p.value} for p in self.pickups],
             'walls': [{'x': w.rect.x, 'y': w.rect.y, 'width': w.rect.width, 'height': w.rect.height, 'is_player_wall': w.is_player_wall, 'health': w.health} for w in self.walls],
             'game_over': self.game_over,
             'wave': self.wave,
             'wave_cooldown': self.wave_cooldown,
             'scores': self.scores
-=======
-            'walls': [{'x': w.rect.x, 'y': w.rect.y, 'width': w.rect.width, 'height': w.rect.height, 'is_player_wall': w.is_player_wall, 'health': w.health} for w in self.walls],
-            'game_over': self.game_over,
-            'wave': self.wave,
-            'wave_cooldown': self.wave_cooldown
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
         }
 
     @classmethod
     def from_dict(cls, data):
-<<<<<<< HEAD
         from common.game_objects import Player, Enemy, Bullet, LootBox, Mine, get_weapon_by_name, Wall, Pickup
         state = cls()
-=======
-        from common.game_objects import Player, Enemy, Bullet, LootBox, Mine, get_weapon_by_name, Wall
-        state = cls()
-        # Get the current client's player ID if available
-        current_player_id = None # We cannot reliably get the client's own player ID here without passing it
-        # A more robust solution would pass the client's player ID to from_dict
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
 
         for pid, p_data in data['players'].items():
             player = Player(p_data['x'], p_data['y'], pid)
             player.angle = p_data['angle']
             player.health = p_data['health']
-<<<<<<< HEAD
             player.armor = p_data.get('armor', 0)
             player.weapons = [get_weapon_by_name(name) for name in p_data.get('weapons', ['Pistol'])]
             player.selected_weapon_index = p_data.get('selected_weapon_index', 0)
@@ -124,27 +95,11 @@ class GameState:
             player.ammo = {}
             for weapon_name, ammo_count in p_data.get('ammo', {}).items():
                 player.ammo[weapon_name] = ammo_count
-=======
-            player.weapons = [get_weapon_by_name(name) for name in p_data.get('weapons', ['Pistol'])] # Default to Pistol if no weapons
-            # Only deserialize selected_weapon_index for other players, not the current client's player
-            # Note: This requires knowing the current client's player_id, which is not directly available here.
-            # As a simplified fix for now, we will *not* deserialize selected_weapon_index at all.
-            # The client will manage its own selected index based on user input.
-            # A proper fix would involve sending the selected index in player input.
-            # player.selected_weapon_index = p_data.get('selected_weapon_index', 0) # REMOVED AUTO DESERIALIZATION
-            player.dead = p_data.get('dead', False)
-            player.respawn_timer = p_data.get('respawn_timer', 0)
-            player.ammo = p_data.get('ammo', {}) # Dodaj deserializację amunicji
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
             state.players[pid] = player
         for e_data in data['enemies']:
             enemy = Enemy(e_data['x'], e_data['y'], e_data.get('type', 1))
             enemy.health = e_data['health']
-<<<<<<< HEAD
             enemy.look_angle = e_data.get('look_angle', 0)
-=======
-            enemy.look_angle = e_data.get('look_angle', 0) # Deserialize look_angle
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
             state.enemies.append(enemy)
         for b_data in data['bullets']:
             bullet = Bullet(b_data['x'], b_data['y'], b_data['angle'], b_data['player_id'])
@@ -162,7 +117,6 @@ class GameState:
         for w_data in data.get('walls', []):
             wall = Wall(w_data['x'], w_data['y'], w_data['width'], w_data['height'], w_data.get('is_player_wall', False), w_data.get('health', 100))
             state.walls.append(wall)
-<<<<<<< HEAD
         for p_data in data.get('pickups', []):
             pickup = Pickup(p_data['x'], p_data['y'], p_data['pickup_type'], p_data['value'])
             state.pickups.append(pickup)
@@ -170,9 +124,4 @@ class GameState:
         state.wave = data.get('wave', 1)
         state.wave_cooldown = data.get('wave_cooldown', 0)
         state.scores = data.get('scores', {})
-=======
-        state.game_over = data.get('game_over', False)
-        state.wave = data.get('wave', 1)
-        state.wave_cooldown = data.get('wave_cooldown', 0)
->>>>>>> 5a64deb6d96bcdc2b48547972a73467901949e85
         return state 
