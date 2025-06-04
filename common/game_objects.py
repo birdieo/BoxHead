@@ -97,6 +97,7 @@ class Player:
         self.health = 500
         self.armor = 0  # Reset armor on respawn
         self.x, self.y = 400, 300
+        self.angle = 0  # Reset angle
         self.respawn_timer = 0
         basic_weapon = get_weapon_by_name("Pistol")
         self.weapons = [basic_weapon]
@@ -216,6 +217,19 @@ class Enemy:
              self._bullet_damage = 15 # Obrażenia pocisku
              self._bullet_speed = 8 # Prędkość pocisku
 
+        elif self.type == 5: # Boss na poziom 5
+            self.health = 1000
+            self.speed = 40.0
+            self.size = 45
+            self.color = (255, 215, 0)  # Złoty kolor dla bossa
+            self.damage = 20
+            self._initial_health = 1000
+            self._is_shooter = True
+            self._last_shot = 0
+            self._fire_rate = 500  # Strzela dwa razy szybciej niż normalny strzelec
+            self._bullet_damage = 25
+            self._bullet_speed = 12
+            
         # Pola do patrolowania
         self._patrol_target = (self.x, self.y) # Cel patrolowania
         self._patrol_timer = 0 # Czas do zmiany celu

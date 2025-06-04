@@ -82,6 +82,9 @@ class GameServer:
                 elif message['type'] == 'restart_game':
                     for p in self.game_state.players.values():
                         p.respawn()
+                        # Reset input state for all players
+                        for pid in self.player_inputs:
+                            self.player_inputs[pid] = {'dx': 0, 'dy': 0, 'angle': 0, 'shoot': False, 'mouse_x': 0, 'mouse_y': 0}
                     self.game_over = False
                     self.wave = 1
                     self.wave_cooldown = 0
@@ -115,8 +118,16 @@ class GameServer:
                     while not spawn_successful and attempts < 50:
                         x = random.randint(50, 750)
                         y = random.randint(50, 550)
-                        enemy_type = random.randint(1, 4) # Include type 4
-                        enemy_size = Enemy(x, y, enemy_type).size # Stwórz tymczasowego wroga, aby poznać rozmiar
+                        
+                        # Wybór typu przeciwnika
+                        if self.wave == 5:
+                            # Na 5 poziomie spawnuj bossa
+                            enemy_type = 5
+                        else:
+                            # Na innych poziomach normalna logika
+                            enemy_type = random.randint(1, 4)
+                            
+                        enemy_size = Enemy(x, y, enemy_type).size
                         enemy_rect = pygame.Rect(x - enemy_size, y - enemy_size, enemy_size*2, enemy_size*2)
                         
                         collides_with_wall = False
@@ -126,8 +137,14 @@ class GameServer:
                                 break
                                 
                         if not collides_with_wall:
-                            self.game_state.enemies.append(Enemy(x, y, enemy_type))
-                            self.zombies_to_spawn -= 1
+                            # Na poziomie 5 spawnuj tylko jednego bossa
+                            if self.wave == 5:
+                                self.game_state.enemies = []  # Usuń wszystkich innych przeciwników
+                                self.game_state.enemies.append(Enemy(x, y, enemy_type))
+                                self.zombies_to_spawn = 0  # Nie spawnuj więcej przeciwników w tej fali
+                            else:
+                                self.game_state.enemies.append(Enemy(x, y, enemy_type))
+                                self.zombies_to_spawn -= 1
                             spawn_successful = True
                         
                         attempts += 1
@@ -292,7 +309,7 @@ class GameServer:
                         if not player.dead:
                             if ((bullet.x - player.x) ** 2 + (bullet.y - player.y) ** 2) ** 0.5 < player.size:
                                 # Gracz otrzymał obrażenia od pocisku wroga lub innego gracza
-                                player.health -= bullet.damage # Użyj obrażeń pocisku
+                                player.take_damage(bullet.damage)
                                 if player.health <= 0 and not player.dead:
                                     player.kill()
                                 if bullet in self.game_state.bullets:
@@ -507,7 +524,7 @@ class GameServer:
 
                 # Kolizja zombie z graczem (zadawanie obrażeń)
                 if target_player and ((enemy.x - target_player.x) ** 2 + (enemy.y - target_player.y) ** 2) ** 0.5 < enemy.size + target_player.size:
-                    target_player.health -= enemy.damage
+                    target_player.take_damage(enemy.damage)
                     if target_player.health <= 0 and not target_player.dead:
                         target_player.kill()
 
